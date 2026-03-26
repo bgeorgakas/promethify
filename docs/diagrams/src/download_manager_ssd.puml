@@ -1,0 +1,28 @@
+@startuml download_manager_ssd
+' @diagram: sequence
+participant download_manager
+participant downloader
+database db
+database disk
+database cloudflare
+
+loop 
+    download_manager -> db: get_pending_job()
+    db --> download_manager: job_id
+    download_manager -> db : update_job_status(job_id, "running")
+    download_manager -> download_manager: get_resource_id(job_id)
+
+    download_manager -> downloader: get_resource_metadata(resource_id)
+    downloader --> download_manager: resource_metadata
+
+    loop for each track in resource_metadata.tracks
+        download_manager -> downloader: download_track(track_id)
+        downloader --> download_manager: track_metadata
+        download_manager -> disk: read_track(track_metadata)
+        disk --> download_manager: track
+        download_manager -> cloudflare: upload_track(track)
+        cloudflare --> download_manager: download_url
+        download_manager -> db: update_download_url(job_id, download_url)
+    end
+    download_manager -> db: update_job_status(job_id, "completed")
+end

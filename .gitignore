@@ -1,0 +1,6 @@
+.env*
+credentials.json
+.pychache
+__pycache__
+*.pyc
+*.egg-info

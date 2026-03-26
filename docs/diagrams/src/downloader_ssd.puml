@@ -1,0 +1,21 @@
+@startuml downloader_ssd
+' @diagram: sequence
+actor user
+participant downloader
+participant spotify
+database disk
+
+== get_resource_metadata ==
+user -> downloader: get_resource_metadata(resource_id)
+downloader -> spotify: get_resource_metadata(resource_id)
+spotify --> downloader: resource_metadata
+downloader --> user: resource_metadata
+
+== download_track ==
+user -> downloader: download_track(track_id)
+downloader -> spotify: download_track(track_id)
+spotify --> downloader: track
+downloader -> disk: save_track(track)
+downloader --> user: track_metadata
+
+@enduml

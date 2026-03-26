@@ -1,0 +1,3 @@
+[submodule "packages/librespot"]
+	path = packages/librespot
+	url = https://github.com/bgeorgakas/librespot-python.git

@@ -1,0 +1,28 @@
+' @diagram erd
+
+@startuml Database Schema
+' Entity: Users - Registered application users
+entity users {
+    id : UUID [PK]           ' Primary key
+    email : TEXT [UNIQUE]    ' Unique email address for user
+    password : TEXT [UNIQUE]  ' Unique password for user
+    --
+    created_at : TIMESTAMPTZ   ' Account creation timestamp
+}
+
+entity jobs {
+    id : UUID [PK]           ' Primary key
+    user_id : UUID [FK]      ' Foreign key referencing users(id)
+    resource_url : TEXT [FK]  ' URL of the resource to be downloaded
+    download_url : TEXT       ' URL where the downloaded resource is stored
+    status : ENUM            ' Job status (e.g., pending, completed)
+    --
+    created_at : TIMESTAMPTZ   ' Job creation timestamp
+    error_message : TEXT      ' Error message if job failed
+}
+
+
+' Relationships
+users ||--o{jobs
+
+@enduml
