@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "./packages/downloader"
+    ],
+    "python.testing.pytestArgs": [
+        "-s", "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
