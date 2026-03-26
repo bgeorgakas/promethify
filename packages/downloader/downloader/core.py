@@ -51,28 +51,43 @@ class ResourceMetadata:
     
 def get_resource_metadata(resource_id: str, resource_type: str, session: Session) -> ResourceMetadata:
 
-    name: str
+    name: str = ""
+    track_ids: list[str] = []
 
     if resource_type == 'track':
         track_metadata = session.api().get_metadata_4_track(metadata.TrackId.from_base62(resource_id))
-        track_ids = [utils.gid_to_base62(track_metadata.gid)]
-        name = track_metadata.name
+
+        try:
+            track_ids = [utils.gid_to_base62(track_metadata.gid)]
+            name = track_metadata.name
+
+        except Exception as e:
+            print(f"Failed parsing track metadata for track ID: {resource_id}, error: {e}")
+            track_ids = []
+            name = ""
+        
 
     elif resource_type == 'album':
         album_metadata = session.api().get_metadata_4_album(metadata.AlbumId.from_base62(resource_id))
-        track_ids = [
-            utils.gid_to_base62(track.gid)
-            for disc in album_metadata.disc
-            for track in disc.track  
-        ]
+
+        for disc in album_metadata.disc:
+            for track in disc.track:
+                try:
+                    track_ids.append(utils.gid_to_base62(track.gid))
+                except Exception as e:
+                    print(f"Failed parsing track metadata for track ID: {utils.gid_to_base62(track.gid)}, error: {e}")
+        
         name = album_metadata.name
 
     elif resource_type == 'playlist':
-        resource_metadata = session.api().get_metadata_4_playlist(metadata.PlaylistId(resource_id))
-        track_ids = [
-            utils.parse_spotify_uri(track.uri)[1]
-            for track in resource_metadata.contents.items
-        ]
+        resource_metadata = session.api().get_playlist(metadata.PlaylistId(resource_id))
+
+        for track in resource_metadata.contents.items:
+            try:
+                track_ids.append(utils.parse_spotify_uri(track.uri)[1])
+            except Exception as e:
+                print(f"Failed parsing track URI: {track.uri}, error: {e}")
+                
         name = resource_metadata.attributes.name
 
     tracks = []
@@ -99,19 +114,29 @@ def download_track(track: TrackMetadata, session: Session, library_path: str, ex
     output_path = os.path.join(library_path, track.to_path(ext))
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
+    if os.path.exists(output_path):
+        print(f"Track already exists at {output_path}, skipping download")
+        return True
+    
+    print(f"Downloading track: {track}")
 
-    stream = session.content_feeder().load(
-        metadata.TrackId.from_base62(track.id), 
-        VorbisOnlyAudioQuality(AudioQuality.VERY_HIGH),
-        False, None
-    )
+    try:
+        stream = session.content_feeder().load(
+            metadata.TrackId.from_base62(track.id), 
+            VorbisOnlyAudioQuality(AudioQuality.VERY_HIGH),
+            False, None
+        )
 
-    with open(output_path, 'wb') as f:
-        chunk = None
-        while chunk != b'':
-            chunk = stream.input_stream.stream().read(1024)
-            f.write(chunk)
+        with open(output_path, 'wb') as f:
+            chunk = None
+            while chunk != b'':
+                chunk = stream.input_stream.stream().read(1024)
+                f.write(chunk)
 
+    except Exception as e:
+        print(f"Failed downloading track: {track}, error: {e}")
+        return False
+    
     return True
 
 

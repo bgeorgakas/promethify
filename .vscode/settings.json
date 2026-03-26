@@ -1,6 +1,8 @@
 {
     "python.analysis.extraPaths": [
-        "./packages/downloader"
+        "./packages/downloader",
+        "./packages/librespot",
+        "./packages/db"
     ],
     "python.testing.pytestArgs": [
         "-s", "tests"

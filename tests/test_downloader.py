@@ -13,7 +13,16 @@ def test_get_resource_metadata():
     print(resource_metadata)
 
 def test_download_track():
-    session = create_librespot_session()
-    track_metadata = download_track('00TFDHSe7s8cWm5CzDY8UP', session)
-    assert track_metadata is not None
+    session = create_librespot_session(os.getenv("CREDENTIALS_PATH"), is_auth=False)
+    track_metadata = get_resource_metadata('00TFDHSe7s8cWm5CzDY8UP', 'track', session).tracks[0]
+    assert download_track(track_metadata, session, os.getenv("LIBRARY_PATH"))
     print(track_metadata)
+
+def test_download_large_playlist():
+    session = create_librespot_session(os.getenv("CREDENTIALS_PATH"), is_auth=False)
+    resource_metadata = get_resource_metadata('4ac1R7BdsmDVK78bv3YAOT', 'playlist', session)
+
+    for track in resource_metadata.tracks:
+        download_track(track, session, os.getenv("LIBRARY_PATH"))
+
+    assert resource_metadata is not None
