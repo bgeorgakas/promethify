@@ -24,3 +24,5 @@ _base62 = metadata.Base62.create_instance_with_inverted_character_set()
 def gid_to_base62(gid: bytes) -> str:
     return _base62.encode(gid, 22).decode()
 
+def get_cover_url(hex_id: str) -> str:
+    return f"https://i.scdn.co/image/{hex_id}"
