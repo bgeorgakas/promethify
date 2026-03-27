@@ -1,28 +1,28 @@
-from downloader.auth import create_librespot_session
-from downloader.core import get_resource_metadata, download_track
 import os
+import threading
 
-def test_create_librespot_session():
-    session = create_librespot_session(os.getenv("CREDENTIALS_PATH"), is_auth=False)
-    assert session is not None
+import db
+from downloader.auth import create_librespot_session
+from downloader.core import Downloader
 
-def test_get_resource_metadata():
-    session = create_librespot_session(os.getenv("CREDENTIALS_PATH"), is_auth=False)
-    resource_metadata = get_resource_metadata('3n3Ppam7vgaVa1iaRUc9Lp', 'track', session)
-    assert resource_metadata is not None
-    print(resource_metadata)
+def test_downloader():
+    db.core.init_db()
+    job1_id = db.core.add_job("https://open.spotify.com/track/59e3tozWHknnpbh7m4SAkH?si=4e6eef4266e8435e")
+    job2_id = db.core.add_job("https://open.spotify.com/playlist/1QE0TkAVFObb3bKzSwqyUZ?si=TuvuWoDoS16b9bAuwx-3Tg")
+    job3_id = db.core.add_job("https://open.spotify.com/album/200xhXQBPc2OWPsZ3koxTc?si=q4-L0hV6TKKAgktgBAspVg")
 
-def test_download_track():
-    session = create_librespot_session(os.getenv("CREDENTIALS_PATH"), is_auth=False)
-    track_metadata = get_resource_metadata('00TFDHSe7s8cWm5CzDY8UP', 'track', session).tracks[0]
-    assert download_track(track_metadata, session, os.getenv("LIBRARY_PATH"))
-    print(track_metadata)
+    downloader = Downloader()
 
-def test_download_large_playlist():
-    session = create_librespot_session(os.getenv("CREDENTIALS_PATH"), is_auth=False)
-    resource_metadata = get_resource_metadata('4ac1R7BdsmDVK78bv3YAOT', 'playlist', session)
+    thread = threading.Thread(target=downloader.start, kwargs={"exit_after": True})
+    thread.start()
 
-    for track in resource_metadata.tracks:
-        download_track(track, session, os.getenv("LIBRARY_PATH"))
+    thread.join()
+    assert thread.is_alive() == False
 
-    assert resource_metadata is not None
+    job_status = db.core.get_job_status(job1_id)
+    assert job_status == db.models.JobStatus.COMPLETED
+    job_status = db.core.get_job_status(job2_id)
+    assert job_status == db.models.JobStatus.COMPLETED
+    job_status = db.core.get_job_status(job3_id)
+    assert job_status == db.models.JobStatus.COMPLETED
+    
